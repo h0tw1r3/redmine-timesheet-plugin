@@ -37,6 +37,11 @@
 </p>
 
 <p>
+  <label for="timesheet_trackers_" class="select_all"><%= l(:timesheet_trackers_label)%>:</label><br />
+  <%= select_tag 'timesheet[trackers][]', tracker_options(@timesheet, @trackers), { :multiple => true, :size => @list_size} %>
+</p>
+
+<p>
   <label for="timesheet_users_" class="select_all"><%= l(:timesheet_users_label)%>:</label><br />
   <%= select_tag 'timesheet[users][]', user_options(@timesheet), { :multiple => true, :size => @list_size} %>
 </p>

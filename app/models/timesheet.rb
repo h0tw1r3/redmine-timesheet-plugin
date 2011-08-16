@@ -1,5 +1,5 @@
 class Timesheet
-  attr_accessor :date_from, :date_to, :projects, :activities, :users, :allowed_projects, :period, :period_type
+  attr_accessor :date_from, :date_to, :projects, :activities, :trackers, :users, :allowed_projects, :period, :period_type
 
   # Time entries on the Timesheet in the form of:
   #   project.name => {:logs => [time entries], :users => [users shown in logs] }
@@ -40,6 +40,12 @@ class Timesheet
       end.flatten.uniq.compact
     else
       self.activities =  TimeEntryActivity.all.collect { |a| a.id.to_i }
+    end
+    
+    unless options[:trackers].nil?
+      self.trackers = options[:trackers].collect { |a| a.to_i }
+    else
+      self.trackers = Tracker.all.collect { |a| a.id.to_i }
     end
     
     unless options[:users].nil?
@@ -121,6 +127,7 @@ class Timesheet
       :date_from => date_from,
       :date_to => date_to,
       :activities => activities,
+      :trackers => trackers,
       :users => users,
       :sort => sort
     }
@@ -203,19 +210,21 @@ class Timesheet
   def conditions(users, extra_conditions=nil)
     if self.potential_time_entry_ids.empty?
       if self.date_from.present? && self.date_to.present?
-        conditions = ["spent_on >= (:from) AND spent_on <= (:to) AND #{TimeEntry.table_name}.project_id IN (:projects) AND user_id IN (:users) AND activity_id IN (:activities)",
+        conditions = ["spent_on >= (:from) AND spent_on <= (:to) AND #{TimeEntry.table_name}.project_id IN (:projects) AND user_id IN (:users) AND #{::Issue.table_name}.tracker_id IN (:trackers) AND activity_id IN (:activities)",
                       {
                         :from => self.date_from,
                         :to => self.date_to,
                         :projects => self.projects,
                         :activities => self.activities,
+                        :trackers => self.trackers,
                         :users => users
                       }]
       else # All time
-        conditions = ["#{TimeEntry.table_name}.project_id IN (:projects) AND user_id IN (:users) AND activity_id IN (:activities)",
+        conditions = ["#{TimeEntry.table_name}.project_id IN (:projects) AND user_id IN (:users) AND #{::Issue.table_name}.tracker_id IN (:trackers) AND activity_id IN (:activities)",
                       {
                         :projects => self.projects,
                         :activities => self.activities,
+                        :trackers => self.trackers,
                         :users => users
                       }]
       end
@@ -248,6 +257,7 @@ class Timesheet
     return project.time_entries.find(:all,
                                      :conditions => self.conditions(self.users),
                                      :include => self.includes,
+                                     :joins => [:issue],
                                      :order => "spent_on ASC")
   end
   
@@ -256,6 +266,7 @@ class Timesheet
                                      :conditions => self.conditions(User.current.id),
                                      :include => self.includes,
                                      :include => [:activity, :user, {:issue => [:tracker, :assigned_to, :priority]}],
+                                     :joins => [:issue],
                                      :order => "spent_on ASC")
   end
   
@@ -264,6 +275,7 @@ class Timesheet
                                    :conditions => self.conditions(self.users),
                                    :include => self.includes,
                                    :include => [:activity, :user],
+                                   :joins => [:issue],
                                    :order => "spent_on ASC")
   end
   
@@ -272,6 +284,7 @@ class Timesheet
                                    :conditions => self.conditions(User.current.id),
                                    :include => self.includes,
                                    :include => [:activity, :user],
+                                   :joins => [:issue],
                                    :order => "spent_on ASC")
   end
   
@@ -281,6 +294,7 @@ class Timesheet
     return TimeEntry.find(:all,
                           :conditions => self.conditions([user], extra_conditions),
                           :include => self.includes,
+                          :joins => [:issue],
                           :order => "spent_on ASC"
                           )
   end

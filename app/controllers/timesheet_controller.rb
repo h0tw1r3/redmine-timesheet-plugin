@@ -5,6 +5,7 @@ class TimesheetController < ApplicationController
   before_filter :get_list_size
   before_filter :get_precision
   before_filter :get_activities
+  before_filter :get_trackers
 
   helper :sort
   include SortHelper
@@ -116,6 +117,10 @@ class TimesheetController < ApplicationController
 
   def get_activities
     @activities = TimeEntryActivity.all(:conditions => 'parent_id IS NULL')
+  end
+  
+  def get_trackers
+    @trackers = Tracker.all
   end
   
   def allowed_projects

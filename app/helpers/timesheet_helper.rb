@@ -60,6 +60,10 @@ module TimesheetHelper
     options_from_collection_for_select(activities, :id, :name, timesheet.activities)
   end
 
+  def tracker_options(timesheet, trackers)
+    options_from_collection_for_select(trackers, :id, :name, timesheet.trackers)
+  end
+
   def user_options(timesheet)
     available_users = Timesheet.viewable_users.sort { |a,b| a.to_s.downcase <=> b.to_s.downcase }
     selected_users = timesheet.users
